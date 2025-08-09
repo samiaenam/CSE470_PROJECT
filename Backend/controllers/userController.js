@@ -20,7 +20,6 @@ module.exports.registerUser = async (req, res, next) => {
 
     const hashedPassword = await userModel.hashPassword(password);
 
-    // ⬇️ Merged user creation logic from userService.js
     if (!fullname.firstname || !email || !password) {
         return res.status(400).json({ message: 'All fields are required' });
     }
