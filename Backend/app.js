@@ -5,8 +5,8 @@ const cors = require('cors');
 const app = express();
 const cookieParser = require('cookie-parser');
 const connectToDb = require('./db/db');
-const userRoutes = require('./routes/user.routes');
-
+const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 connectToDb();
 
@@ -22,8 +22,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/users', userRoutes);
-
-
+app.use('/admin', adminRoutes);
 
 
 
