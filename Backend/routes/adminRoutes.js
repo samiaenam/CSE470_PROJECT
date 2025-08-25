@@ -1,7 +1,11 @@
-import { verifyAdmin } from '../middleware/verifyAdmin.js';
+const express = require('express');
+const { addVehicle, updateVehicle, getVehicles } = require('../controllers/adminController');
+const { authUser } = require('../middleware/authMiddleware');
+const router = express.Router();
 
-// Promote to admin
-router.put('/users/:id/promote', verifyAdmin, promoteToAdmin);
+router.post('/vehicle', authUser, addVehicle);
+router.put('/vehicle/:id', authUser, updateVehicle);
+router.get('/vehicles', authUser, getVehicles);
 
-// Demote admin
-router.put('/users/:id/demote', verifyAdmin, demoteToUser);
+module.exports = router;
+
