@@ -1,32 +1,19 @@
-// server.js
-const express = require('express');
-const mongoose = require('mongoose');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const routes = require("./routes"); // central routes
+const connectDB = require("./config/db");
 
-const userRoutes = require('./routes/userRoutes');
-const rideRoutes = require('./routes/rideRoutes');
-const rentalRoutes = require('./routes/rentalRoutes');
-const adminRoutes = require('./routes/adminRoutes');
+dotenv.config();
+console.log("MONGO_URI from env:", process.env.MONGO_URI);
+connectDB();
 
 const app = express();
-
-// Middleware
+app.use(cors());
 app.use(express.json());
-app.use(cookieParser());
 
-// Routes
-app.use('/api/users', userRoutes);
-app.use('/api/rides', rideRoutes);
-app.use('/api/rentals', rentalRoutes);
-app.use('/api/admin', adminRoutes);
+app.use("/api", routes);
 
-// DB + Server start
-mongoose.connect(process.env.DB_CONNECT)
-    .then(() => {
-        console.log('✅ MongoDB connected');
-        app.listen(process.env.PORT, () =>
-            console.log(`🚀 Server running on http://localhost:${process.env.PORT}`)
-        );
-    })
-    .catch(err => console.error('❌ MongoDB connection failed:', err));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
