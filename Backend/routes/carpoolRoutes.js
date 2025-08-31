@@ -2,21 +2,24 @@ const express = require("express");
 const router = express.Router();
 const carpoolController = require("../controllers/carpoolController");
 
-// ========== ADMIN ==========
-router.post("/rides", carpoolController.createRide); 
-// Body: { area, destination, pickupLocations: ["..."], dropLocations: ["..."] }
+// ============================
+// ADMIN
+// ============================
 
-// ========== USER ==========
-router.get("/rides/:area/destinations", carpoolController.getDestinationsFromArea);
-// Example: /rides/Bashundhara/destinations
+// Create a new route (admin only)
+router.post("/rides", carpoolController.createRide);
 
-router.get("/rides/:area/pickup-locations", carpoolController.getPickupLocations);
-// Example: /rides/Bashundhara/pickup-locations
+// ============================
+// USER
+// ============================
 
-router.get("/rides/:area/:destination/drop-locations", carpoolController.getDropLocations);
-// Example: /rides/Bashundhara/Gulshan/drop-locations
+// Get pickup points + available destinations for an area
+router.get("/rides/:pickupArea", carpoolController.getPickupPoints);
 
-router.post("/bookings", carpoolController.bookRide); 
-// Body: { rideId, userId, pickupLocation, dropLocation }
+// Get drop points for a pickup area + destination
+router.get("/rides/:pickupArea/:destinationArea", carpoolController.getDropPoints);
+
+// Book a ride (always for tomorrow)
+router.post("/book", carpoolController.bookRide);
 
 module.exports = router;

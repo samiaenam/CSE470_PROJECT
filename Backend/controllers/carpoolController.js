@@ -1,92 +1,102 @@
 const Ride = require("../models/rideModel");
 const Booking = require("../models/bookingModel");
-const mongoose = require("mongoose");
 
-// 1. Admin creates a new ride (static route)
+// ============================
+// ADMIN: Create a new route
+// ============================
 exports.createRide = async (req, res) => {
   try {
-    const { area, destination, pickupLocations, dropLocations } = req.body;
+    const { routeName, pickupArea, pickupPoints, destinationArea, dropPoints } = req.body;
 
-    const ride = new Ride({
-      area,
-      destination,
-      pickupLocations: pickupLocations.map(loc => ({ name: loc, type: "pickup" })),
-      dropLocations: dropLocations.map(loc => ({ name: loc, type: "drop" }))
+    const newRide = new Ride({
+      routeName,
+      pickupArea,
+      pickupPoints,
+      destinationArea,
+      dropPoints
     });
 
-    await ride.save();
-    res.status(201).json({ success: true, ride });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    await newRide.save();
+
+    res.status(201).json({
+      message: "Ride route created successfully",
+      ride: newRide
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create ride", error: err.message });
   }
 };
 
-// 2. User gets available destinations from an area
-exports.getDestinationsFromArea = async (req, res) => {
+// ============================
+// USER: Get pickup points by area
+// ============================
+exports.getPickupPoints = async (req, res) => {
   try {
-    const { area } = req.params;
-    const rides = await Ride.find({ area, active: true });
+    const { pickupArea } = req.params;
+    const rides = await Ride.find({ pickupArea });
 
-    const destinations = [...new Set(rides.map(r => r.destination))];
-    res.json({ success: true, destinations });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (!rides.length) return res.status(404).json({ message: "No routes from this area" });
+
+    res.status(200).json({
+      pickupArea,
+      pickupPoints: rides.flatMap(r => r.pickupPoints),
+      destinations: rides.map(r => r.destinationArea)
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching pickup points", error: err.message });
   }
 };
 
-// 3. User gets pickup locations for an area
-exports.getPickupLocations = async (req, res) => {
+// ============================
+// USER: Get drop points by pickup + destination
+// ============================
+exports.getDropPoints = async (req, res) => {
   try {
-    const { area } = req.params;
-    const rides = await Ride.find({ area, active: true });
-    const pickupLocations = rides.flatMap(r => r.pickupLocations);
+    const { pickupArea, destinationArea } = req.params;
+    const ride = await Ride.findOne({ pickupArea, destinationArea });
 
-    res.json({ success: true, pickupLocations });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (!ride) return res.status(404).json({ message: "No route found" });
+
+    res.status(200).json({
+      pickupArea,
+      destinationArea,
+      dropPoints: ride.dropPoints
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching drop points", error: err.message });
   }
 };
 
-// 4. User gets drop locations for a destination
-exports.getDropLocations = async (req, res) => {
-  try {
-    const { area, destination } = req.params;
-    const ride = await Ride.findOne({ area, destination, active: true });
-
-    if (!ride) {
-      return res.status(404).json({ success: false, message: "Route not found" });
-    }
-
-    res.json({ success: true, dropLocations: ride.dropLocations });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// 5. User books a ride (auto-scheduled for tomorrow)
+// ============================
+// USER: Book ride (always for tomorrow)
+// ============================
 exports.bookRide = async (req, res) => {
   try {
-    const { rideId, userId, pickupLocation, dropLocation } = req.body;
+    const { userId, rideId, pickupPoint, dropPoint } = req.body;
 
     const ride = await Ride.findById(rideId);
-    if (!ride) return res.status(404).json({ success: false, message: "Ride not found" });
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
 
-    // Only allow booking for tomorrow
-    const tomorrow = new Date();
+    // Set booking date = tomorrow
+    let tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
 
     const booking = new Booking({
-      ride: rideId,
-      user: userId,
-      pickupLocation,
-      dropLocation,
-      date: tomorrow
+      userId,
+      rideId,
+      pickupPoint,
+      dropPoint,
+      date: tomorrow,
     });
 
     await booking.save();
-    res.status(201).json({ success: true, booking });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+
+    res.status(201).json({
+      message: "Ride booked successfully for tomorrow",
+      booking
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Booking failed", error: err.message });
   }
 };

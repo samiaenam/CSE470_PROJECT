@@ -1,15 +1,36 @@
+// models/rentalRideModel.js
 const mongoose = require("mongoose");
 
-const rentalSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  vehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", required: true },
-  hours: { type: Number, required: true },
-  invitedFriends: [
+const rentalRideSchema = new mongoose.Schema({
+  initiator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  vehicle: {
+    type: String,
+    required: true,
+  },
+  destination: {
+    type: String,
+    required: true,
+  },
+  initiatorPickup: {
+    type: String,
+    required: true,
+  },
+  invites: [
     {
-      email: { type: String, required: true },
-      status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" }
+      emailOrPhone: { type: String, required: true },
+      status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
+      pickupLocation: { type: String } // optional, only if they want to set
     }
-  ]
+  ],
+  status: {
+    type: String,
+    enum: ["open", "in-progress", "completed", "cancelled"],
+    default: "open",
+  },
 }, { timestamps: true });
 
-module.exports = mongoose.model("Rental", rentalSchema);
+module.exports = mongoose.model("Rental", rentalRideSchema);

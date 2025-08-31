@@ -1,11 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const { addVehicle, updateVehicle, addRoute, updateRoute } = require("../controllers/adminController");
-const { authMiddleware } = require("../middleware/authMiddleware");
+const adminController = require("../controllers/adminController");
 
-router.post("/vehicle", authMiddleware, addVehicle);
-router.put("/vehicle/:id", authMiddleware, updateVehicle);
-router.post("/route", authMiddleware, addRoute);
-router.put("/route/:id", authMiddleware, updateRoute);
+// CRUD for rides
+router.post("/rides", adminController.createRide);
+router.get("/rides", adminController.getAllRides);
+router.put("/rides/:id", adminController.updateRideDetails);
+router.delete("/rides/:id", adminController.deleteRide);
+
+// Pickup management
+router.post("/rides/:id/pickup", adminController.addPickupPoint);
+router.delete("/rides/:id/pickup", adminController.removePickupPoint);
+
+// Drop-off management
+router.post("/rides/:id/dropoff", adminController.addDropPoint);
+router.delete("/rides/:id/dropoff", adminController.removeDropPoint);
 
 module.exports = router;

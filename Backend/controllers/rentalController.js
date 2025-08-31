@@ -1,60 +1,60 @@
-const Rental = require("../models/Rental");
+// controllers/rentalController.js
+const RentalRide = require("../models/rentalRideModel");
 
-// Create rental booking
-exports.rentVehicle = async (req, res) => {
+// Create rental ride with invites
+exports.createRentalRide = async (req, res) => {
   try {
-    const { vehicle, hours, invitedFriends } = req.body;
+    const { vehicle, destination, pickupLocation, invites } = req.body;
+    const userId = req.user._id; // initiator
 
-    const rental = await Rental.create({
-      user: req.user.userId,
+    const ride = new RentalRide({
+      initiator: userId,
       vehicle,
-      hours,
-      invitedFriends: invitedFriends || [] // start with invited friends if provided
+      destination,
+      initiatorPickup: pickupLocation,
+      invites: invites.map(inv => ({ emailOrPhone: inv }))
     });
 
-    res.status(201).json(rental);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    await ride.save();
+    res.status(201).json({ message: "Rental ride created", ride });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating rental ride", error });
   }
 };
 
-// Invite a friend to rental
-exports.inviteFriend = async (req, res) => {
+// Get ride details for invitee by email/phone
+exports.getRentalInvite = async (req, res) => {
   try {
-    const { rentalId, friendEmail } = req.body;
-    const rental = await Rental.findById(rentalId);
-    if (!rental) return res.status(404).json({ message: "Rental not found" });
+    const { emailOrPhone } = req.params;
+    const rides = await RentalRide.find({
+      "invites.emailOrPhone": emailOrPhone,
+      status: "open"
+    });
 
-    // prevent duplicate invites
-    const alreadyInvited = rental.invitedFriends.find(f => f.email === friendEmail);
-    if (alreadyInvited) {
-      return res.status(400).json({ message: "Friend already invited" });
-    }
-
-    rental.invitedFriends.push({ email: friendEmail, status: "pending" });
-    await rental.save();
-
-    res.json({ message: "Friend invited successfully", rental });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json(rides);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching invites", error });
   }
 };
 
-// Friend accepts/declines
-exports.respondInvite = async (req, res) => {
+// Accept/Decline invite
+exports.respondToInvite = async (req, res) => {
   try {
-    const { rentalId, status } = req.body; // status = "accepted" or "declined"
-    const rental = await Rental.findById(rentalId);
-    if (!rental) return res.status(404).json({ message: "Rental not found" });
+    const { rideId } = req.params;
+    const { emailOrPhone, response, pickupLocation } = req.body;
 
-    const friend = rental.invitedFriends.find(f => f.email === req.user.email);
-    if (!friend) return res.status(400).json({ message: "You are not invited" });
+    const ride = await RentalRide.findById(rideId);
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
 
-    friend.status = status;
-    await rental.save();
+    const invite = ride.invites.find(inv => inv.emailOrPhone === emailOrPhone);
+    if (!invite) return res.status(404).json({ message: "Invite not found" });
 
-    res.json({ message: `Invite ${status}`, rental });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    invite.status = response; // "accepted" or "declined"
+    if (pickupLocation) invite.pickupLocation = pickupLocation;
+
+    await ride.save();
+    res.json({ message: `Invite ${response}`, ride });
+  } catch (error) {
+    res.status(500).json({ message: "Error responding to invite", error });
   }
 };
