@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { rentVehicle, inviteFriend, respondInvite } = require("../controllers/rentalController");
+const { createRentalRide, getRentalInvite, respondToInvite} = require("../controllers/rentalController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
-router.post("/rent", authMiddleware, rentVehicle);
-router.post("/invite", authMiddleware, inviteFriend);
-router.post("/respond", authMiddleware, respondInvite);
+router.post("/rent", authMiddleware, createRentalRide);
+router.post("/invite", authMiddleware, getRentalInvite);
+router.post("/respond", authMiddleware, respondToInvite);
 
 module.exports = router;
