@@ -7,18 +7,18 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, gender } = req.body;
 
-    if (!name || !email || !password || !gender) {
+    if (!name || !phone || !password || !gender) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ phone });
     if (existingUser) return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name,
-      email,
+      phone,
       password: hashedPassword,
       gender
     });
@@ -32,10 +32,10 @@ exports.register = async (req, res) => {
 // Login
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: "Email & password required" });
+    const { phone, password } = req.body;
+    if (!phone || !password) return res.status(400).json({ message: "Phone & password required" });
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ phone });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);

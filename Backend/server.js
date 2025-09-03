@@ -4,9 +4,6 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const routes = require("./routes/index"); // central routes
 const connectDB = require("./config/db");
-// const userRoutes = require("./routes/authRoutes");
-// const adminRoutes = require("./routes/adminRoutes");
-// const carpoolRoutes = require("./routes/carpoolRoutes");
 
 dotenv.config();
 console.log("MONGO_URI from env:", process.env.MONGO_URI);

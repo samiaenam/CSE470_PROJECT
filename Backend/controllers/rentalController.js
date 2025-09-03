@@ -1,60 +1,127 @@
 // controllers/rentalController.js
-const RentalRide = require("../models/rentalRideModel");
+const Rental = require("../models/rentalRideModel");
+const Vehicle = require("../models/vehicleModel");
+const User = require("../models/User");
 
-// Create rental ride with invites
-exports.createRentalRide = async (req, res) => {
+// 1. Create a new rental trip
+exports.createRental = async (req, res) => {
   try {
-    const { vehicle, destination, pickupLocation, invites } = req.body;
-    const userId = req.user._id; // initiator
+    const { vehicleId, destination, initiatorPickup, invites } = req.body;
+    const initiator = req.user._id; // comes from auth middleware
 
-    const ride = new RentalRide({
-      initiator: userId,
-      vehicle,
+    // check vehicle exists and available
+    const vehicle = await Vehicle.findById(vehicleId);
+    if (!vehicle || !vehicle.available) {
+      return res.status(400).json({ message: "Vehicle not available" });
+    }
+
+    const rental = await Rental.create({
+      initiator,
+      vehicle: vehicleId,
       destination,
-      initiatorPickup: pickupLocation,
-      invites: invites.map(inv => ({ emailOrPhone: inv }))
+      pickupLocations: [
+        { user: initiator, location: initiatorPickup, confirmed: true },
+      ],
+      invites, // array of { phone }
     });
 
-    await ride.save();
-    res.status(201).json({ message: "Rental ride created", ride });
-  } catch (error) {
-    res.status(500).json({ message: "Error creating rental ride", error });
+    // 🔑 mark the vehicle as booked (no longer available)
+    vehicle.available = false;
+    await vehicle.save();
+
+    res.status(201).json(rental);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-// Get ride details for invitee by email/phone
-exports.getRentalInvite = async (req, res) => {
+// 2. View available vehicles
+exports.getAvailableVehicles = async (req, res) => {
   try {
-    const { emailOrPhone } = req.params;
-    const rides = await RentalRide.find({
-      "invites.emailOrPhone": emailOrPhone,
-      status: "open"
-    });
-
-    res.json(rides);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching invites", error });
+    const vehicles = await Vehicle.find({ available: true });
+    res.json(vehicles);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-// Accept/Decline invite
-exports.respondToInvite = async (req, res) => {
+// 3. Respond to an invite (accept/decline)
+exports.respondInvite = async (req, res) => {
   try {
-    const { rideId } = req.params;
-    const { emailOrPhone, response, pickupLocation } = req.body;
+    const { rentalId, phone, status, pickupLocation } = req.body;
 
-    const ride = await RentalRide.findById(rideId);
-    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    const rental = await Rental.findById(rentalId);
+    if (!rental) return res.status(404).json({ message: "Rental not found" });
 
-    const invite = ride.invites.find(inv => inv.emailOrPhone === emailOrPhone);
+    // find the invite for this phone
+    const invite = rental.invites.find((i) => i.phone === phone);
     if (!invite) return res.status(404).json({ message: "Invite not found" });
 
-    invite.status = response; // "accepted" or "declined"
-    if (pickupLocation) invite.pickupLocation = pickupLocation;
+    // ✅ make sure only invited person can respond
+    const user = await User.findById(req.user._id);
+    if (!user || user.phone !== phone) {
+      return res.status(403).json({ message: "You are not authorized to respond to this invite" });
+    }
 
-    await ride.save();
-    res.json({ message: `Invite ${response}`, ride });
-  } catch (error) {
-    res.status(500).json({ message: "Error responding to invite", error });
+    // update status
+    invite.status = status;
+
+    if (status === "accepted") {
+      // attach pickup location ONLY when accepted
+      rental.pickupLocations.push({
+        user: req.user._id,
+        location: pickupLocation || "Not specified",
+        confirmed: true,
+      });
+      invite.user = req.user._id; // link invite to user
+    } else {
+      // if declined, remove any accidental pickup location for this user
+      rental.pickupLocations = rental.pickupLocations.filter(
+        (p) => p.user.toString() !== req.user._id.toString()
+      );
+      invite.user = req.user._id;
+    }
+
+    await rental.save();
+    res.json(rental);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 4. View user’s rentals (only accepted)
+exports.getMyRentals = async (req, res) => {
+  try {
+    const rentals = await Rental.find({
+      $or: [
+        { initiator: req.user._id }, // trips they created
+        { "invites.user": req.user._id, "invites.status": "accepted" }, // trips they accepted
+      ],
+    })
+      .populate("vehicle")
+      .populate("initiator", "name email");
+
+    res.json(rentals);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 5. Cancel a rental (only initiator)
+exports.cancelRental = async (req, res) => {
+  try {
+    const rental = await Rental.findById(req.params.id);
+    if (!rental) return res.status(404).json({ message: "Rental not found" });
+
+    if (rental.initiator.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Only initiator can cancel" });
+    }
+
+    rental.status = "cancelled";
+    await rental.save();
+
+    res.json({ message: "Rental cancelled", rental });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
