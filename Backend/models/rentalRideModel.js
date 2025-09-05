@@ -1,3 +1,4 @@
+// models/rentalRideModel.js
 const mongoose = require("mongoose");
 
 const rentalRideSchema = new mongoose.Schema({
@@ -15,6 +16,10 @@ const rentalRideSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  date: {  // 🆕 add rental date
+    type: Date,
+    required: true,
+  },
   pickupLocations: [
     {
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -25,8 +30,12 @@ const rentalRideSchema = new mongoose.Schema({
   invites: [
     {
       phone: { type: String, required: true },
-      status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
-      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // optional link if user exists
+      status: {
+        type: String,
+        enum: ["pending", "accepted", "declined"],
+        default: "pending",
+      },
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     },
   ],
   status: {

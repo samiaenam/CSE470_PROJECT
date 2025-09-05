@@ -1,18 +1,21 @@
-// ./pages/MyBookings.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Card, Button, Spinner } from "react-bootstrap";
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // 🔹 Fetch user's bookings
   const fetchBookings = async () => {
-    setLoading(true);
     try {
-      const res = await axios.get("/api/carpool/my-bookings");
+      setLoading(true);
+      const res = await axios.get("http://localhost:5000/api/carpool/mybookings", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       setBookings(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching bookings:", err);
     } finally {
       setLoading(false);
     }
@@ -22,60 +25,63 @@ export default function MyBookings() {
     fetchBookings();
   }, []);
 
-  const handleCancel = async (bookingId) => {
+  // 🔹 Cancel booking
+  const handleCancel = async (id) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+
     try {
-      await axios.delete(`/api/carpool/cancel/${bookingId}`);
-      alert("Booking canceled");
+      await axios.post(
+        `http://localhost:5000/api/carpool/cancel/${id}`,
+        {},
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+      alert("Booking cancelled ✅");
       fetchBookings(); // refresh list
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to cancel booking");
+      alert(err.response?.data?.message || "Failed to cancel ❌");
     }
   };
 
-  return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">My Bookings</h1>
+  if (loading) return <Spinner animation="border" className="d-block mx-auto mt-5" />;
 
-      {loading ? (
-        <p>Loading bookings...</p>
-      ) : bookings.length === 0 ? (
-        <p>You have no bookings yet.</p>
+  return (
+    <div className="container mt-4">
+      <h2 className="mb-4">My Carpool Bookings</h2>
+
+      {bookings.length === 0 ? (
+        <p>You don’t have any bookings yet.</p>
       ) : (
-        <div className="grid gap-4">
-          {bookings.map((b) => (
-            <div
-              key={b._id}
-              className="p-4 border rounded shadow-sm flex flex-col gap-2"
-            >
-              <h2 className="font-semibold">{b.ride.routeName}</h2>
-              <p>
-                Date: <span className="font-medium">{b.date}</span>
-              </p>
-              <p>
-                Time: <span className="font-medium">{b.ride.time}</span>
-              </p>
-              <p>
-                Pickup:{" "}
-                <span className="font-medium">
-                  {b.pickupLocation || "Not selected"}
+        bookings.map((b) => (
+          <Card key={b._id} className="mb-3 shadow-sm">
+            <Card.Body>
+              <Card.Title>{b.ride?.routeName || "Ride"}</Card.Title>
+              <Card.Subtitle className="mb-2 text-muted">
+                {new Date(b.date).toDateString()} at {b.time}
+              </Card.Subtitle>
+              <Card.Text>
+                <strong>Pickup:</strong> {b.pickup} <br />
+                <strong>Dropoff:</strong> {b.dropoff} <br />
+                <strong>Status:</strong>{" "}
+                <span
+                  className={
+                    b.status === "booked" ? "text-success" : "text-danger"
+                  }
+                >
+                  {b.status}
                 </span>
-              </p>
-              <p>
-                Drop-off:{" "}
-                <span className="font-medium">
-                  {b.dropoffLocation || "Not selected"}
-                </span>
-              </p>
-              <button
-                onClick={() => handleCancel(b._id)}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Cancel Booking
-              </button>
-            </div>
-          ))}
-        </div>
+              </Card.Text>
+
+              {b.status === "booked" && (
+                <Button
+                  variant="danger"
+                  onClick={() => handleCancel(b._id)}
+                >
+                  Cancel Booking
+                </Button>
+              )}
+            </Card.Body>
+          </Card>
+        ))
       )}
     </div>
   );

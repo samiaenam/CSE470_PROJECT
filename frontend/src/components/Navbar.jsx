@@ -1,27 +1,53 @@
-// ./components/Navbar.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
 export default function Navbar() {
   return (
-    <nav className="bg-blue-600 text-white p-4 shadow-md">
-      <div className="max-w-6xl mx-auto flex justify-between items-center">
-        {/* Logo / App Name */}
-        <Link to="/" className="text-xl font-bold">
-          CarpoolApp
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div className="container">
+        <Link className="navbar-brand" to="/">
+          CarpoolApp 🚗
         </Link>
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
 
-        {/* Links */}
-        <div className="flex gap-6">
-          <Link to="/carpool" className="hover:underline">
-            Carpool
-          </Link>
-          <Link to="/my-bookings" className="hover:underline">
-            My Bookings
-          </Link>
-          <Link to="/profile" className="hover:underline">
-            Profile
-          </Link>
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav ms-auto">
+            <li className="nav-item">
+              <Link className="nav-link" to="/carpool">
+                Carpool
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/rental">
+                Rentals
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/my-bookings">
+                My Bookings
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/my-rentals">
+                My Rentals
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/profile">
+                Profile
+              </Link>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>

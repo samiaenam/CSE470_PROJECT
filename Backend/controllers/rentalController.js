@@ -6,27 +6,38 @@ const User = require("../models/User");
 // 1. Create a new rental trip
 exports.createRental = async (req, res) => {
   try {
-    const { vehicleId, destination, initiatorPickup, invites } = req.body;
-    const initiator = req.user._id; // comes from auth middleware
+    const { vehicleId, destination, initiatorPickup, invites, date } = req.body;
+    const initiator = req.user._id;
 
-    // check vehicle exists and available
+    if (!date) return res.status(400).json({ message: "Rental date is required" });
+
+    const rentalDate = new Date(date);
+    rentalDate.setHours(0, 0, 0, 0);
+
     const vehicle = await Vehicle.findById(vehicleId);
-    if (!vehicle || !vehicle.available) {
-      return res.status(400).json({ message: "Vehicle not available" });
+    if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
+
+    // check if vehicle is already booked on that date
+    const isUnavailable = vehicle.unavailableDates.some(
+      d => d.getTime() === rentalDate.getTime()
+    );
+    if (isUnavailable) {
+      return res.status(400).json({ message: "Vehicle already booked for this date" });
     }
 
     const rental = await Rental.create({
       initiator,
       vehicle: vehicleId,
       destination,
+      date: rentalDate,
       pickupLocations: [
         { user: initiator, location: initiatorPickup, confirmed: true },
       ],
-      invites, // array of { phone }
+      invites,
     });
 
-    // 🔑 mark the vehicle as booked (no longer available)
-    vehicle.available = false;
+    // mark vehicle as unavailable only for that date
+    vehicle.unavailableDates.push(rentalDate);
     await vehicle.save();
 
     res.status(201).json(rental);
@@ -38,12 +49,24 @@ exports.createRental = async (req, res) => {
 // 2. View available vehicles
 exports.getAvailableVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find({ available: true });
+    const { date } = req.query;
+    if (!date) return res.status(400).json({ message: "Date is required" });
+
+    const queryDate = new Date(date);
+    queryDate.setHours(0, 0, 0, 0);
+
+    // find all vehicles NOT booked for that date
+    const vehicles = await Vehicle.find({
+      unavailableDates: { $ne: queryDate }
+    });
+
     res.json(vehicles);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 // 3. Respond to an invite (accept/decline)
 exports.respondInvite = async (req, res) => {
@@ -92,10 +115,18 @@ exports.respondInvite = async (req, res) => {
 // 4. View user’s rentals (only accepted)
 exports.getMyRentals = async (req, res) => {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // normalize to midnight
+
     const rentals = await Rental.find({
-      $or: [
-        { initiator: req.user._id }, // trips they created
-        { "invites.user": req.user._id, "invites.status": "accepted" }, // trips they accepted
+      $and: [
+        {
+          $or: [
+            { initiator: req.user._id },
+            { "invites.user": req.user._id, "invites.status": "accepted" },
+          ],
+        },
+        { date: { $gte: today } }, // only today + future
       ],
     })
       .populate("vehicle")
