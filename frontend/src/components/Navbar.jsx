@@ -1,34 +1,106 @@
 // src/components/Navbar.jsx
-import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-      <div className="container">
-        <Link to="/" className="navbar-brand">RideShare</Link>
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div className="container-fluid">
+        <Link className="navbar-brand" to="/">
+          Carpool
+        </Link>
         <div className="collapse navbar-collapse">
           <ul className="navbar-nav me-auto">
-            <li className="nav-item"><Link className="nav-link" to="/">Vehicles</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/trips/create">Create Trip</Link></li>
-            {user?.isAdmin && (
+            {!user && (
               <>
-                <li className="nav-item"><Link className="nav-link" to="/admin/vehicles">Admin Vehicles</Link></li>
-                <li className="nav-item"><Link className="nav-link" to="/admin/trips">Admin Trips</Link></li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">
+                    Login
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/register">
+                    Register
+                  </Link>
+                </li>
               </>
             )}
-          </ul>
-          <ul className="navbar-nav">
-            {user ? (
+
+            {user && (
               <>
-                <li className="nav-item nav-link"><Link to="/profile">{user.name || user.phone}</Link></li>
-                <li className="nav-item"><button className="btn btn-link nav-link" onClick={logout}>Logout</button></li>
+                {/* User Links */}
+                <li className="nav-item">
+                  <Link className="nav-link" to="/profile">
+                    Profile
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/rides">
+                    Rides
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/my-bookings">
+                    My Bookings
+                  </Link>
+                </li>
+
+                {/* Trip Links */}
+                <li className="nav-item">
+                  <Link className="nav-link" to="/trips/create">
+                    Create Trip
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/my-trips">
+                    My Trips
+                  </Link>
+                </li>
+                {/* <li className="nav-item">
+                  <Link className="nav-link" to="/my-invites">
+                    My Invites
+                  </Link>
+                </li> */}
+
+                {/* Admin Links */}
+                {(user.isAdmin || user.role === "admin") && (
+                  <>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/admin/trips">
+                        Admin Trips
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/admin/rides">
+                        Admin Rides
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/admin/vehicles">
+                        Admin Vehicles
+                      </Link>
+                    </li>
+                  </>
+                )}
+
+                <li className="nav-item">
+                  <button
+                    className="btn btn-sm btn-danger ms-2"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </li>
               </>
-            ) : (
-              <li className="nav-item"><Link className="nav-link" to="/login">Login</Link></li>
             )}
           </ul>
         </div>

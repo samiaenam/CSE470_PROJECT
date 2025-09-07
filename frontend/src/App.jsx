@@ -1,36 +1,55 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, AuthContext } from './context/AuthContext'; // <--- import AuthContext here
-import Navbar from './components/Navbar';
+// App.jsx
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 
-import Login from './pages/Login';
-import VehiclesList from './pages/VehiclesList';
-import AdminVehicles from './pages/AdminVehicles';
-import CreateTrip from './pages/CreateTrip';
-import TripDetails from './pages/TripDetails';
-import AdminTrips from './pages/AdminTrips';
-import UserProfile from './pages/UserProfile';
-import AdminRoute from './components/AdminRoute';
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import UpdateProfile from "./pages/UpdateProfile";
+import AdminVehicles from "./pages/AdminVehicles";
 
-function RequireAuth({ children }) {
-  const { user } = React.useContext(AuthContext); // <--- use imported AuthContext
-  if (!user) return <Navigate to="/login" replace />;
-  return children;
-}
+// Ride pages
+import RideList from "./pages/RideList";
+import MyBookings from "./pages/MyBookings";
+import AdminRides from "./pages/AdminRides";
+
+// Trip pages
+import CreateTrip from "./pages/CreateTrip";
+import MyTrips from "./pages/MyTrips";
+import AdminTrips from "./pages/AdminTrips";
+import TripDetails from "./pages/TripDetails";
 
 export default function App() {
   return (
     <AuthProvider>
       <Navbar />
-      <div className="container mt-5">
+      <div className="container mt-4">
         <Routes>
-          <Route path="/" element={<VehiclesList />} />
+          {/* Public routes */}
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<RequireAuth><UserProfile /></RequireAuth>} />
-          <Route path="/trips/create" element={<RequireAuth><CreateTrip /></RequireAuth>} />
-          <Route path="/trips/:id" element={<RequireAuth><TripDetails /></RequireAuth>} />
-          <Route path="/admin/vehicles" element={<AdminRoute><AdminVehicles /></AdminRoute>} />
-          <Route path="/admin/trips" element={<AdminRoute><AdminTrips /></AdminRoute>} />
+          <Route path="/register" element={<Register />} />
+
+          {/* User profile */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/update" element={<UpdateProfile />} />
+
+          {/* Ride features */}
+          <Route path="/rides" element={<RideList />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
+
+          {/* Trip features */}
+          <Route path="/trips/create" element={<CreateTrip />} />
+          <Route path="/my-trips" element={<MyTrips />} />
+          <Route path="/trips/:id" element={<TripDetails />} />
+
+          {/* Admin pages */}
+          <Route path="/admin/vehicles" element={<AdminVehicles />} />
+          <Route path="/admin/rides" element={<AdminRides />} />
+          <Route path="/admin/trips" element={<AdminTrips />} />
         </Routes>
       </div>
     </AuthProvider>

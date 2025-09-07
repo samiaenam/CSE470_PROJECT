@@ -1,84 +1,120 @@
-// src/pages/CreateTrip.jsx
-import React, { useState, useEffect, useContext } from 'react';
-import API from '../services/api';
-import { AuthContext } from '../context/AuthContext';
+import React, { useEffect, useState } from "react";
+import API from "../services/api";
 
 export default function CreateTrip() {
-  const { user } = useContext(AuthContext);
-  const [date, setDate] = useState('');
-  const [destination, setDestination] = useState('');
-  const [pickupLocation, setPickupLocation] = useState('');
-  const [availableVehicles, setAvailableVehicles] = useState([]);
-  const [selectedVehicle, setSelectedVehicle] = useState('');
-  const [invitedUsers, setInvitedUsers] = useState('');
+  const [vehicles, setVehicles] = useState([]);
+  const [form, setForm] = useState({
+    vehicleId: "",
+    date: "",
+    destination: "",
+    pickupLocation: "",
+    invitedPhones: "",
+  });
+  const [message, setMessage] = useState(null);
 
-  const loadVehicles = async () => {
-    if (!date) return;
-    try {
-      const res = await API.get(`/trips/available-vehicles?date=${date}`);
-      setAvailableVehicles(res.data);
-    } catch (err) {
-      alert(err.response?.data?.message || err.message);
+  useEffect(() => {
+    if (form.date) {
+      API.get(`/trips/available-vehicles?date=${form.date}`)
+        .then(res => setVehicles(res.data))
+        .catch(err => console.error(err));
     }
-  };
+  }, [form.date]);
 
-  const submit = async (e) => {
+  const handleChange = e =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (!selectedVehicle || !date || !destination || !pickupLocation) return alert('All fields required');
-
-    const invitedUserIds = invitedUsers.split(',').map(id => id.trim()).filter(Boolean);
-
     try {
-      await API.post('/trips', {
-        vehicleId: selectedVehicle,
-        date,
-        destination,
-        pickupLocation,
-        invitedUserIds
-      });
-      alert('Trip created');
-      setDate('');
-      setDestination('');
-      setPickupLocation('');
-      setSelectedVehicle('');
-      setInvitedUsers('');
+      const payload = {
+        ...form,
+        invitedPhones: form.invitedPhones
+          ? form.invitedPhones.split(",").map(p => p.trim())
+          : [],
+      };
+      const res = await API.post("/trips", payload);
+      setMessage("Trip created successfully!");
+      console.log(res.data);
     } catch (err) {
-      alert(err.response?.data?.message || err.message);
+      setMessage(err.response?.data?.message || "Error creating trip");
     }
   };
-
-  useEffect(()=>{ loadVehicles() }, [date]);
 
   return (
-    <div>
-      <h3>Create Trip</h3>
-      <form onSubmit={submit}>
-        <div className="mb-2">
+    <div className="container mt-4">
+      <h2>Create Trip</h2>
+      {message && <div className="alert alert-info">{message}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
           <label>Date</label>
-          <input type="date" className="form-control" value={date} onChange={e=>setDate(e.target.value)} />
+          <input
+            type="date"
+            name="date"
+            className="form-control"
+            value={form.date}
+            onChange={handleChange}
+            required
+          />
         </div>
-        <div className="mb-2">
+
+        <div className="mb-3">
           <label>Destination</label>
-          <input type="text" className="form-control" value={destination} onChange={e=>setDestination(e.target.value)} />
+          <input
+            type="text"
+            name="destination"
+            className="form-control"
+            value={form.destination}
+            onChange={handleChange}
+            required
+          />
         </div>
-        <div className="mb-2">
+
+        <div className="mb-3">
           <label>Pickup Location</label>
-          <input type="text" className="form-control" value={pickupLocation} onChange={e=>setPickupLocation(e.target.value)} />
+          <input
+            type="text"
+            name="pickupLocation"
+            className="form-control"
+            value={form.pickupLocation}
+            onChange={handleChange}
+            required
+          />
         </div>
-        <div className="mb-2">
+
+        <div className="mb-3">
           <label>Vehicle</label>
-          <select className="form-select" value={selectedVehicle} onChange={e=>setSelectedVehicle(e.target.value)}>
-            <option value="">Select Vehicle</option>
-            {availableVehicles.map(v => <option key={v._id} value={v._id}>{v.name} - {v.licensePlate}</option>)}
+          <select
+            name="vehicleId"
+            className="form-control"
+            value={form.vehicleId}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select vehicle</option>
+            {vehicles.map(v => (
+              <option key={v._id} value={v._id}>
+                {v.name} ({v.licensePlate})
+              </option>
+            ))}
           </select>
         </div>
-        <div className="mb-2">
-          <label>Invite Users (comma-separated user phones)</label>
-          <input type="text" className="form-control" value={invitedUsers} onChange={e=>setInvitedUsers(e.target.value)} />
+
+        <div className="mb-3">
+          <label>Invite Friends (comma-separated phone numbers)</label>
+          <input
+            type="text"
+            name="invitedPhones"
+            className="form-control"
+            value={form.invitedPhones}
+            onChange={handleChange}
+          />
         </div>
-        <button className="btn btn-primary">Create Trip</button>
+
+        <button className="btn btn-primary" type="submit">
+          Create Trip
+        </button>
       </form>
     </div>
   );
 }
-

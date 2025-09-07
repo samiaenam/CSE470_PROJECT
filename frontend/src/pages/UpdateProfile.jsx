@@ -1,36 +1,47 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 
-export default function Register() {
+export default function UpdateProfile() {
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
-    password: "",
     gender: "",
+    password: "",
   });
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await API.get("/auth/profile");
+        setForm({ ...res.data, password: "" });
+        setLoading(false);
+      } catch (err) {
+        alert(err.response?.data?.message || err.message);
+      }
+    };
+    loadProfile();
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(null);
-
     try {
-      await API.post("/auth/register", form);
-      alert("Registration successful! Please login.");
-      navigate("/login");
+      await API.put("/auth/profile", form);
+      alert("Profile updated!");
+      navigate("/profile");
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      alert(err.response?.data?.message || err.message);
     }
   };
 
+  if (loading) return <p>Loading...</p>;
+
   return (
     <div className="col-md-6 offset-md-3">
-      <h3>Register</h3>
-      {error && <div className="alert alert-danger">{error}</div>}
-
+      <h3>Update Profile</h3>
       <form onSubmit={submit}>
         <div className="mb-3">
           <label className="form-label">Name</label>
@@ -38,10 +49,8 @@ export default function Register() {
             className="form-control"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
           />
         </div>
-
         <div className="mb-3">
           <label className="form-label">Email</label>
           <input
@@ -49,38 +58,22 @@ export default function Register() {
             className="form-control"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            required
           />
         </div>
-
         <div className="mb-3">
           <label className="form-label">Phone</label>
           <input
             className="form-control"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            required
           />
         </div>
-
-        <div className="mb-3">
-          <label className="form-label">Password</label>
-          <input
-            type="password"
-            className="form-control"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
-        </div>
-
         <div className="mb-3">
           <label className="form-label">Gender</label>
           <select
             className="form-control"
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            required
           >
             <option value="">Select</option>
             <option value="male">Male</option>
@@ -88,8 +81,16 @@ export default function Register() {
             <option value="other">Other</option>
           </select>
         </div>
-
-        <button className="btn btn-primary">Register</button>
+        <div className="mb-3">
+          <label className="form-label">New Password (optional)</label>
+          <input
+            type="password"
+            className="form-control"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+          />
+        </div>
+        <button className="btn btn-primary">Save Changes</button>
       </form>
     </div>
   );

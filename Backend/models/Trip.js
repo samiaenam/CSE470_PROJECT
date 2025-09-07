@@ -1,14 +1,29 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
+const tripSchema = new mongoose.Schema(
+  {
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    vehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", required: true },
 
-const tripSchema = new mongoose.Schema({
-creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
-date: { type: String, required: true }, // store as string YYYY-MM-DD
-destination: { type: String, required: true },
-pickupLocations: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, location: String }],
-invited: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' } }],
-});
+    destination: { type: String, required: true },
+    date: { type: String, required: true }, // store YYYY-MM-DD string
 
+    pickupLocations: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        location: { type: String },
+      },
+    ],
 
-module.exports = mongoose.model('Trip', tripSchema);
+    invitedFriends: [
+      {
+        friend: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        status: { type: String, enum: ["pending", "accepted", "declined"], default: "pending" },
+        pickupLocation: { type: String },
+      },
+    ],
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Trip", tripSchema);

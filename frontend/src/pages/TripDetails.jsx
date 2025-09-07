@@ -1,70 +1,105 @@
-// src/pages/TripDetails.jsx
-import React, { useEffect, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
-import API from '../services/api';
-import { AuthContext } from '../context/AuthContext';
+// import React, { useEffect, useState } from "react";
+// import { useParams } from "react-router-dom";
+// import API from "../services/api";
+
+// export default function TripDetails() {
+//   const { id } = useParams();
+//   const [trip, setTrip] = useState(null);
+
+//   useEffect(() => {
+//     API.get(`/trips/${id}`)
+//       .then(res => setTrip(res.data))
+//       .catch(err => console.error(err));
+//   }, [id]);
+
+//   if (!trip) return <p>Loading...</p>;
+
+//   return (
+//     <div className="container mt-4">
+//       <h2>Trip to {trip.destination}</h2>
+//       <p><b>Date:</b> {trip.date}</p>
+//       <p><b>Created By:</b> {trip.createdBy?.name}</p>
+
+//       <h4>Vehicle</h4>
+//       <p>
+//         {trip.vehicle?.name} ({trip.vehicle?.licensePlate}) – Capacity: {trip.vehicle?.capacity}
+//       </p>
+
+//       <h4>Pickup Locations</h4>
+//       <ul>
+//         {trip.pickupLocations.map(p => (
+//           <li key={p._id}>
+//             {p.user?.name}: {p.location}
+//           </li>
+//         ))}
+//       </ul>
+
+//       <h4>Invited Friends</h4>
+//       <ul>
+//         {trip.invitedFriends.map(f => (
+//           <li key={f._id}>
+//             {f.friend?.name || "Unknown"} – {f.status}
+//             {f.pickupLocation && ` (Pickup: ${f.pickupLocation})`}
+//           </li>
+//         ))}
+//       </ul>
+//     </div>
+//   );
+// }
+
+import React, { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import API from "../services/api";
 
 export default function TripDetails() {
   const { id } = useParams();
-  const { user } = useContext(AuthContext);
   const [trip, setTrip] = useState(null);
-  const [response, setResponse] = useState('');
-  const [pickupLocation, setPickupLocation] = useState('');
 
   const loadTrip = async () => {
     try {
       const res = await API.get(`/trips/${id}`);
       setTrip(res.data);
     } catch (err) {
-      alert(err.response?.data?.message || err.message);
+      console.error(err);
+      alert(err.response?.data?.message || "Cannot load trip");
     }
   };
 
-  const submitResponse = async () => {
-    if (!response) return alert('Choose accept or decline');
-    try {
-      await API.post(`/trips/${id}/respond`, { status: response, pickupLocation });
-      alert('Response saved');
-      loadTrip();
-    } catch (err) {
-      alert(err.response?.data?.message || err.message);
-    }
-  };
+  useEffect(() => {
+    loadTrip();
+  }, [id]);
 
-  useEffect(()=>{ loadTrip() }, []);
-
-  if (!trip) return <div>Loading...</div>;
-
-  const myInvite = trip.invited.find(i => i.user._id === user._id);
+  if (!trip) return <p>Loading...</p>;
 
   return (
-    <div>
-      <h3>Trip to {trip.destination} on {trip.date}</h3>
-      <p>Vehicle: {trip.vehicle.name} ({trip.vehicle.licensePlate})</p>
-      <h5>Pickup Locations</h5>
+    <div className="container mt-4">
+      <h2>Trip to {trip.destination}</h2>
+      <p><b>Date:</b> {trip.date}</p>
+      <p><b>Created By:</b> {trip.createdBy?.name}</p>
+
+      <h4>Vehicle</h4>
+      <p>
+        {trip.vehicle?.name} ({trip.vehicle?.licensePlate}) – Seats: {trip.vehicle?.seats}
+      </p>
+
+      <h4>Pickup Locations</h4>
       <ul>
-        {trip.pickupLocations.map(pl => <li key={pl.user._id}>{pl.user.name}: {pl.location}</li>)}
+        {trip.pickupLocations.map((p, idx) => (
+          <li key={idx}>
+            {p.user?.name}: {p.location}
+          </li>
+        ))}
       </ul>
 
-      <h5>Invites</h5>
+      <h4>Invited Friends</h4>
       <ul>
-        {trip.invited.map(i => <li key={i.user._id}>{i.user.name}: {i.status}</li>)}
+        {trip.invitedFriends.map((f, idx) => (
+          <li key={idx}>
+            {f.friend?.name || "Unknown"} – {f.status}
+            {f.pickupLocation && ` (Pickup: ${f.pickupLocation})`}
+          </li>
+        ))}
       </ul>
-
-      {myInvite && myInvite.status === 'pending' && (
-        <div className="mt-3">
-          <label>Response:</label>
-          <select className="form-select mb-2" value={response} onChange={e=>setResponse(e.target.value)}>
-            <option value="">Select</option>
-            <option value="accepted">Accept</option>
-            <option value="declined">Decline</option>
-          </select>
-          {response === 'accepted' && (
-            <input type="text" className="form-control mb-2" placeholder="Optional pickup location" value={pickupLocation} onChange={e=>setPickupLocation(e.target.value)} />
-          )}
-          <button className="btn btn-primary" onClick={submitResponse}>Submit</button>
-        </div>
-      )}
     </div>
   );
 }

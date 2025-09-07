@@ -145,11 +145,12 @@ exports.removeDropoff = async (req, res) => {
   }
 };
 
-// Book ride (User)
+// Book ride (User) with female-only check, time selection, and seat decrement
 exports.bookRide = async (req, res) => {
   try {
-    const { rideId, pickup, dropoff } = req.body;
+    const { rideId, pickup, dropoff, time } = req.body; // get time
     const userId = req.user._id;
+    const userGender = req.user.gender; // assuming you store gender in user model
 
     const ride = await Ride.findById(rideId);
     if (!ride) return res.status(404).json({ message: "Ride not found" });
@@ -162,9 +163,18 @@ exports.bookRide = async (req, res) => {
       return res.status(400).json({ message: "Invalid dropoff location" });
     }
 
-    // Seat availability
-    const bookingsCount = await Booking.countDocuments({ ride: rideId });
-    if (bookingsCount >= ride.totalSeats) {
+    // Validate time
+    if (!ride.times.includes(time)) {
+      return res.status(400).json({ message: "Invalid time selected" });
+    }
+
+    // Female-only check
+    if (ride.femaleOnly && userGender !== "female") {
+      return res.status(403).json({ message: "This ride is for females only" });
+    }
+
+    // Check seat availability
+    if (ride.totalSeats <= 0) {
       return res.status(400).json({ message: "No seats available" });
     }
 
@@ -174,15 +184,21 @@ exports.bookRide = async (req, res) => {
       user: userId,
       pickup,
       dropoff,
+      time, // save selected time
     });
 
-    res
-      .status(201)
-      .json({ message: "Ride booked successfully", booking });
+    // Decrease seats
+    ride.totalSeats -= 1;
+    await ride.save();
+
+    res.status(201).json({ message: "Ride booked successfully", booking });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
 
 // Get logged-in user's bookings
 exports.getUserBookings = async (req, res) => {
