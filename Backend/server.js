@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const routes = require("./routes/index"); // central routes
+const startSeatResetCron = require("./utils/seatResetCron");
 const connectDB = require("./config/db");
 
 dotenv.config();

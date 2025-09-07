@@ -1,45 +1,50 @@
-// import React from "react";
-// import { Link } from "react-router-dom";
+import React, { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
-// export default function Home() {
-//   return (
-//     <div className="container text-center mt-5">
-//       <h1 className="mb-4">Welcome to CarpoolApp 🚗</h1>
-//       <p className="lead mb-5">
-//         Plan trips, share rides, rent vehicles, and travel smarter with friends.
-//       </p>
+const Home = () => {
+  const { isLoggedIn } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-//       <div className="d-flex justify-content-center gap-3">
-//         <Link to="/carpool" className="btn btn-primary btn-lg">
-//           Find a Carpool
-//         </Link>
-//         <Link to="/rental" className="btn btn-success btn-lg">
-//           Rent a Vehicle
-//         </Link>
-//       </div>
-//     </div>
-//   );
-// }
-// src/pages/Home.jsx
-import React from "react";
-import { Container, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+  const handleCarpoolClick = () => {
+    if (isLoggedIn) {
+      navigate("/carpool");
+    } else {
+      navigate("/login");
+    }
+  };
 
-export default function Home() {
+  const handleRentalClick = () => {
+    if (isLoggedIn) {
+      navigate("/rentals");
+    } else {
+      navigate("/login");
+    }
+  };
+
   return (
-    <Container className="text-center mt-5">
-      <h1>Welcome to CarpoolApp 🚗</h1>
-      <p className="lead mt-3">
+    <div className="container text-center mt-5">
+      <h1 className="display-4 fw-bold">Welcome to CarpoolApp 🚗</h1>
+      <p className="lead text-muted">
         Share rides, book carpools, or rent vehicles easily.
       </p>
       <div className="mt-4">
-        <Button as={Link} to="/carpool" variant="primary" className="me-3">
+        <button
+          onClick={handleCarpoolClick}
+          className="btn btn-primary btn-lg me-3"
+        >
           Find Carpool
-        </Button>
-        <Button as={Link} to="/rental" variant="success">
+        </button>
+        <button
+          onClick={handleRentalClick}
+          className="btn btn-success btn-lg"
+        >
           Rent a Vehicle
-        </Button>
+        </button>
       </div>
-    </Container>
+    </div>
   );
-}
+};
+
+export default Home;
+

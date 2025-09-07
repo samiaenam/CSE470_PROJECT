@@ -1,8 +1,16 @@
+// src/api/axios.js
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // your backend base
-  withCredentials: true, // if you are using cookies for auth
+  baseURL: import.meta.env.VITE_API_BASE || "http://localhost:5000/api",
 });
+
+export function setAuthToken(token) {
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+  }
+}
 
 export default api;

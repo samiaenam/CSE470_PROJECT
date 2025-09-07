@@ -1,34 +1,99 @@
-import { useState } from "react";
-import api from "../api/axios";
+// src/pages/Register.jsx
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
-export default function Register() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", gender: "male" });
+const Register = () => {
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [gender, setGender] = useState("male");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/auth/register", form);
-      alert("Registration successful!");
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        name, email, phone, gender, password,
+      });
+
+      // ✅ auto-login after registration
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      setUser(res.data.user);
+
+      navigate("/");
     } catch (err) {
-      alert(err.response?.data?.message || "Error");
+      setError(err.response?.data?.message || "Registration failed");
     }
   };
-
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <form onSubmit={handleSubmit} className="bg-white shadow-lg p-6 rounded-xl w-80">
-        <h1 className="text-xl font-bold mb-4">Register</h1>
-        <input name="name" placeholder="Name" onChange={handleChange} className="border p-2 w-full mb-2" />
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} className="border p-2 w-full mb-2" />
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} className="border p-2 w-full mb-2" />
-        <select name="gender" onChange={handleChange} className="border p-2 w-full mb-4">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-        <button className="bg-blue-500 text-white w-full py-2 rounded-lg">Register</button>
+    <div className="container mt-4">
+      <h2>Register</h2>
+      {error && <div className="alert alert-danger">{error}</div>}
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label>Name</label>
+          <input
+            type="text"
+            className="form-control"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label>Email</label>
+          <input
+            type="email"
+            className="form-control"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label>Phone</label>
+          <input
+            type="text"
+            className="form-control"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-3">
+          <label>Gender</label>
+          <select
+            className="form-control"
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+          >
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div className="mb-3">
+          <label>Password</label>
+          <input
+            type="password"
+            className="form-control"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit" className="btn btn-success">
+          Register
+        </button>
       </form>
+      <p className="mt-3">
+        Already have an account? <Link to="/login">Login</Link>
+      </p>
     </div>
   );
-}
+};
+
+export default Register;

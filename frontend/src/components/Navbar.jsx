@@ -1,52 +1,35 @@
-import React from "react";
-import { Link } from "react-router-dom";
+// src/components/Navbar.jsx
+import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Navbar() {
-  return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div className="container">
-        <Link className="navbar-brand" to="/">
-          CarpoolApp 🚗
-        </Link>
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
+  const { user, logout } = useContext(AuthContext);
 
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto">
-            <li className="nav-item">
-              <Link className="nav-link" to="/carpool">
-                Carpool
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/rental">
-                Rentals
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/my-bookings">
-                My Bookings
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/my-rentals">
-                My Rentals
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/profile">
-                Profile
-              </Link>
-            </li>
+  return (
+    <nav className="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+      <div className="container">
+        <Link to="/" className="navbar-brand">RideShare</Link>
+        <div className="collapse navbar-collapse">
+          <ul className="navbar-nav me-auto">
+            <li className="nav-item"><Link className="nav-link" to="/">Vehicles</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/trips/create">Create Trip</Link></li>
+            {user?.isAdmin && (
+              <>
+                <li className="nav-item"><Link className="nav-link" to="/admin/vehicles">Admin Vehicles</Link></li>
+                <li className="nav-item"><Link className="nav-link" to="/admin/trips">Admin Trips</Link></li>
+              </>
+            )}
+          </ul>
+          <ul className="navbar-nav">
+            {user ? (
+              <>
+                <li className="nav-item nav-link"><Link to="/profile">{user.name || user.phone}</Link></li>
+                <li className="nav-item"><button className="btn btn-link nav-link" onClick={logout}>Logout</button></li>
+              </>
+            ) : (
+              <li className="nav-item"><Link className="nav-link" to="/login">Login</Link></li>
+            )}
           </ul>
         </div>
       </div>

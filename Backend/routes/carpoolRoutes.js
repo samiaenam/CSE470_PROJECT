@@ -1,74 +1,27 @@
-// const express = require("express");
-// const { authUser } = require("../middleware/authMiddleware");
-// const {
-//   createRide,
-//   updateRide,
-//   deleteRide,
-//   getAllRides,
-// } = require("../controllers/carpoolController");
-
-// const {
-//   bookRide,
-//   cancelBooking,
-//   getMyBookings,
-//   getAvailableRides,
-// } = require("../controllers/bookingController");
-
-// const router = express.Router();
-
-// /**
-//  * ADMIN ROUTES (protected, only admin should access in real system)
-//  */
-// router.post("/rides", createRide);        // Create a ride (admin)
-// router.put("/rides/:id", updateRide);     // Update ride (admin)
-// router.delete("/rides/:id", deleteRide);  // Delete ride (admin)
-// router.get("/rides", getAllRides);        // List all rides (admin/user)
-
-// /**
-//  * USER ROUTES (need authentication)
-//  */
-// router.post("/book", authUser, bookRide);           // Book a ride
-// router.post("/cancel/:id", authUser, cancelBooking);// Cancel booking
-// router.get("/mybookings", authUser, getMyBookings); // View my bookings
-// router.get("/available", getAvailableRides);        // View available rides
-
-// module.exports = router;
 const express = require("express");
-const { authMiddleware } = require("../middleware/authMiddleware");
-const {
-  createRide,
-  updateRide,
-  deleteRide,
-  getAllRides,
-} = require("../controllers/carpoolController");
-
-const {
-  bookRide,
-  cancelBooking,
-  getMyBookings,
-  getAvailableRides,
-} = require("../controllers/bookingController");
-
-
-
-
-
 const router = express.Router();
+const { authMiddleware } = require("../middleware/authMiddleware");
+const rideController = require("../controllers/rideController");
 
-/**
- * ADMIN ROUTES (protected, in real app should check admin role)
- */
-router.post("/rides", createRide);        // Create a ride
-router.put("/rides/:id", updateRide);     // Update a ride
-router.delete("/rides/:id", deleteRide);  // Delete a ride
-router.get("/rides", getAllRides);        // List all rides
+// Booking
+router.get("/my-bookings", authMiddleware, rideController.getUserBookings);
+router.post("/book", authMiddleware, rideController.bookRide);
 
-/**
- * USER ROUTES (need authentication)
- */
-router.post("/book", authMiddleware, bookRide);            // Book a ride
-router.post("/cancel/:id", authMiddleware, cancelBooking); // Cancel booking
-router.get("/mybookings", authMiddleware, getMyBookings);  // View my bookings
-router.get("/available", authMiddleware, getAvailableRides); // View available rides
+
+// Admin: create, delete rides
+router.post("/", authMiddleware, rideController.createRide);
+router.delete("/:id", authMiddleware, rideController.deleteRide);
+
+// Get rides
+router.get("/", authMiddleware, rideController.getRides);
+router.get("/:id", authMiddleware, rideController.getRide);
+
+// Manage pickup/dropoff
+router.post("/:id/add-pickup", authMiddleware, rideController.addPickup);
+router.post("/:id/remove-pickup", authMiddleware, rideController.removePickup);
+router.post("/:id/add-dropoff", authMiddleware, rideController.addDropoff);
+router.post("/:id/remove-dropoff", authMiddleware, rideController.removeDropoff);
+
+
 
 module.exports = router;
